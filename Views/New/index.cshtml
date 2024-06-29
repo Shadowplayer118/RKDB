@@ -1,0 +1,128 @@
+@model IEnumerable<RKDB.ViewModel.ClientInfoViewModel>
+    
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Information</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/RKDB.styles.css" asp-append-version="true" />
+     <style>
+        /* Customize modal appearance */
+        .modal-content {
+            border-radius: 10px;
+        }
+
+        .modal-header {
+            background-color: #007bff;
+            color: #fff;
+            border-bottom: none;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <a class="btn btn-success" href="new/create">Add Client</a>
+    <a class="btn btn-success" href="newer">Add Usertype</a>
+
+    <div class="row">
+        @foreach(var Clientinfo in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card" style="width: 325px; height: 300px;">
+                    <a class="card-header close" href="#" onclick="confirmDelete('@Clientinfo.Id')">&times;</a>
+                    <div class="card-body">
+                        <h5 style="margin-bottom: 30px;"><p class="card-text">@Clientinfo.Firstname @Clientinfo.Lastname</p></h5>
+                        <p class="card-text">User Type: @Clientinfo.UserTypeName</p>
+                        <p class="card-text">Zipcode: @Clientinfo.Zipcode</p>
+                        <p class="card-text">Address: @Clientinfo.Address</p>
+                        <p class="card-text">Age: @Clientinfo.Age</p>
+                        <a class="btn btn-info btn-sm" href="new/profile/@Clientinfo.Id">Loan</a> 
+                        <button class="btn btn-primary btn-sm mr-2" onclick="showDetails('@Clientinfo.Id','@Clientinfo.UserTypeName','@Clientinfo.Firstname','@Clientinfo.Middlename','@Clientinfo.Lastname','@Clientinfo.Address','@Clientinfo.Zipcode','@Clientinfo.Birthday','@Clientinfo.Age','@Clientinfo.Nameoffather','@Clientinfo.Nameofmother','@Clientinfo.CivilStatus','@Clientinfo.Religion','@Clientinfo.Occupation')">Details</button>
+                        <a class="btn btn-warning btn-sm" href="new/update/@Clientinfo.Id">Update</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">Client Details</h5>
+                    <button type="button" class="close" onclick="closeModal()" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Details will be loaded here via JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(clientId) {
+            if (confirm('Delete Client record?')) {
+                window.location.href = 'new/delete/' + clientId;
+            } else {
+                return false;
+            }
+        }
+
+        function closeModal() {
+            $('#detailsModal').modal('hide');
+        }
+
+        function showDetails(id, UserTypeName, Firstname, Middlename, Lastname, Address, Zipcode, Birthday, Age, Nameoffather, Nameofmother, CivilStatus, Religion, Occupation) {
+            var details = {
+                id: id,
+                UserTypeName: UserTypeName,
+                Firstname: Firstname,
+                Middlename: Middlename,
+                Lastname: Lastname,
+                Address: Address,
+                Zipcode: Zipcode,
+                Birthday: Birthday,
+                Age: Age,
+                Nameoffather: Nameoffather,
+                Nameofmother: Nameofmother,
+                CivilStatus: CivilStatus,
+                Religion: Religion,
+                Occupation: Occupation
+            };
+
+            var modalBody = document.querySelector('#detailsModal .modal-body');
+            modalBody.innerHTML = `
+                <p><b>ID:</b> ${details.id}</p>
+                <p><b>UserTypeName:</b> ${details.UserTypeName}</p>
+                <p><b>Firstname:</b> ${details.Firstname}</p>
+                <p><b>Middlename:</b> ${details.Middlename}</p>
+                <p><b>Lastname:</b> ${details.Lastname}</p>
+                <p><b>Address:</b> ${details.Address}</p>
+                <p><b>Zipcode:</b> ${details.Zipcode}</p>
+                <p><b>Birthday:</b> ${details.Birthday}</p>
+                <p><b>Age:</b> ${details.Age}</p>
+                <p><b>Nameoffather:</b> ${details.Nameoffather}</p>
+                <p><b>Nameofmother:</b> ${details.Nameofmother}</p>
+                <p><b>Civil Status:</b> ${details.CivilStatus}</p>
+                <p><b>Religion:</b> ${details.Religion}</p>
+                <p><b>Occupation:</b> ${details.Occupation}</p>
+            `;
+
+            $('#detailsModal').modal('show');
+        }
+    </script>
+</body>
+</html>

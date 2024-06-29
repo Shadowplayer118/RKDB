@@ -1,0 +1,28 @@
+@model List<RKDB.Entities.Usertype>
+
+
+<a class="btn btn-success" href="newer/create">Create</a>
+
+<table class="table table-striped"
+    <thead>
+        <tr>
+        <td><b>Id</b></td>
+        <td><b>Name</b></td>
+        <th></th>
+        </tr>
+    </thead>
+<tbody>
+    @foreach(var Usertype in Model){
+        <tr>
+            <td>@Usertype.Id</td>
+            <td>@Usertype.Name</td>
+            <td>
+                <a class="btn btn-warning" href="newer/update/@Usertype.Id">Update</a>
+                <a class="btn btn-danger" href="newer/delete/@Usertype.Id">Delete</a>
+            </td>
+        </tr>
+    }
+</tbody>
+</table>
+
+

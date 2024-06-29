@@ -1,0 +1,514 @@
+@model RKDB.ViewModel.ClientInfoViewModel
+
+@{ ViewData["Title"] = "Profile"; }
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Profile</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/RKDB.styles.css" asp-append-version="true" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.6/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js"></script>
+
+    <style>
+        /* Custom styles */
+        .card {
+            margin-bottom: 20px;
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-details {
+            flex-grow: 1;
+        }
+
+        .date-info {
+            margin: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn-warning{
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="jumbotron mt-4">
+            <h1 class="display-4">Hello, @Model.Firstname!</h1>
+            <p class="lead">Welcome to the loaning system!</p>
+            <hr class="my-4">
+            <p class="lead">Here's the loaning information for @Model.Firstname.</p>
+        </div>
+    </div>
+    <a class="btn btn-success" asp-controller="New" asp-action="AddLoan" asp-route-id="@Model.Id">Add Loan</a>
+
+    <div class="row">
+        <div class="col-md-12">
+            @foreach (var loan in Model.Loans)
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <div class="float-right">
+                            <button class="btn btn-success mr-2 mark-as-paid-btn" onclick="showDetails('@loan.Id','@loan.PayableAmount','@loan.DateCreated','@loan.Payment','@loan.Term','@loan.Duedate')">Details</button>
+                            @if (loan.Status == "Ongoing")
+                            {
+                                <button class="btn btn-danger btn-add-penalty" data-id="@loan.Id">Add penalty</button>
+                            }
+                            
+                        </div>
+                        <div class="card-details">
+                            <h4 class="card-title">Loan Details</h4>
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="card-text"><strong>Loan amount:</strong> $@loan.Amount</p>
+                                </div>
+                                <div class="col-sm-3">
+                                    <p class="card-text"><strong>Term:</strong> @loan.Term payments</p>
+                                </div>
+                                <div class="col-sm-3">
+                                    <p class="card-text"><strong>Payment:</strong> $@loan.PaymentAmount @loan.Payment</p>
+                                </div>
+                                <div class="col-sm-3">
+                                    <p class="card-text"><strong>Interest:</strong> @loan.Interest%</p>
+                                </div>
+                                @if (loan.Deduction != null)
+                                {
+                                    <div class="col-sm-3">
+                                        <p class="card-text"><strong>Deduction:</strong> $@loan.Deduction</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="col-sm-3">
+                                        <p class="card-text"><strong>Deduction:</strong> None</p>
+                                    </div>
+                                }
+                                @if (loan.Status == "Ongoing")
+                                {
+                                    <div class="col-sm-3">
+                                        <p class="card-text"><strong>Status: </strong>@loan.Status</p>
+                                    </div> 
+                                } else if (loan.Status == "Paid"){
+                                    <div class="col-sm-3">
+                                        <p class="card-text" style="color: rgb(31, 177, 18);"><strong>Status: </strong>@loan.Status</p>
+                                    </div> 
+                                } else if (loan.Status == "Penalized"){
+                                    <div class="col-sm-3">
+                                        <p class="card-text" style="color: rgb(235, 136, 23);"><strong>Status: </strong>@loan.Status</p>
+                                    </div> 
+                                }
+                                <div class="col-sm-3">
+                                    <p class="card-text"><strong>Payable amount:</strong> $@loan.PayableAmount</p>
+                                </div>
+                                @if (loan.Penalty > 0)
+                                {
+                                    <div class="col-sm-3">
+                                        <p class="card-text"><strong>Penalty: </strong> $@loan.Penalty</p>
+                                    </div> 
+                                }
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <p class="card-text"><strong>Receivable amount:</strong> $@loan.Total</p>
+                            </div>
+                        </div>
+                        <div class="date-info">
+                            @{
+                                DateTime? dueDate = loan.Duedate;
+                                string formattedDueDate = dueDate?.ToShortDateString() ?? "N/A";
+                                DateTime? dateCreated = loan.DateCreated;
+                                string formattedDateCreated = dateCreated?.ToShortDateString() ?? "N/A";
+                            }
+                            <p class="card-text" style="color: rgb(18, 42, 177);"><strong>Date Created:</strong> @formattedDateCreated</p>
+                            <p class="card-text" style="color: rgb(177, 18, 18);"><strong>Due Date:</strong> @formattedDueDate</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">Loan Details</h5>
+                    <button type="button" class="close" onclick="closeModal()" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Details will be loaded here via JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addPenaltyModal" tabindex="-1" aria-labelledby="addPenaltyModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPenaltyModalLabel">Add Penalty</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" id="closeBtn">&times;</span>
+                    </button>
+                </div>
+                <form id="addPenaltyForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="Id" name="Id">
+                        <div class="form-group">
+                            <label for="Penalty">Penalty Amount</label>
+                            <input type="number" class="form-control" id="Penalty" name="Penalty" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" id="submitPenaltyBtn">Submit</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Enter Payment Amount</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" id="closeBtnPaymentModal">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <input type="hidden" id="paymentScheduleId">
+                        <label for="paymentAmountInput">Payment Amount:</label>
+                        <input type="number" class="form-control" id="paymentAmountInput" placeholder="Enter amount to pay">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="confirmPaymentBtn">Confirm Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="receiptModal" tabindex="-1" role="dialog" aria-labelledby="receiptModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="receiptModalLabel">Payment Receipt</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Details will be loaded here via JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success print-btn">Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Function to fetch loan details via AJAX
+            function fetchLoanDetails(loanId) {
+                $.ajax({
+                    url: '/New/AddPayment?loanId=' + loanId,
+                    type: 'GET',
+                    success: function (data) {
+                        // Populate loan details in the view
+                        $('#loanDetailsContainer').html(`
+                            <table>
+                                <tr>
+                                    <th>ID</th>
+                                    <td>${data.id}</td>
+                                </tr>
+                                <tr>
+                                    <th>Amount</th>
+                                    <td>$${data.amount}</td>
+                                </tr>
+                                <!-- Add more loan details here as needed -->
+                            </table>
+                        `);
+                    },
+                    error: function () {
+                        alert('Error fetching loan details');
+                    }
+                });
+            }
+
+            // Click event handler for "Go to payment" button
+            $('.btn-warning').click(function (e) {
+                e.preventDefault();
+                var loanId = $(this).data('loan-id');
+                fetchLoanDetails(loanId);
+            });
+        });
+        
+        $(document).ready(function () {
+            $('.mark-as-paid-btn').click(function () {
+                var button = $(this);
+                var loanId = button.data('id');
+                var status = button.data('status');
+
+                if (status === 'Paid') {
+                    return;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("MarkAsPaid", "New")',
+                    data: { loanId: loanId },
+                    success: function (response) {
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+        $(document).ready(function () {
+            $('.btn-add-penalty').click(function () {
+                var Id = $(this).data('id');
+                $('#Id').val(Id);
+                $('#addPenaltyModal').modal('show');
+            });
+
+            $('#addPenaltyForm').submit(function (event) {
+                event.preventDefault(); // Prevent the form from submitting normally
+
+                var Penalty = $('#Penalty').val();
+                var Id = $('#Id').val();
+                
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("SubmitPenalty", "New")',
+                    data: { Id: Id, Penalty: Penalty },
+                    success: function(result) {
+                        location.reload();
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
+
+                $('#addPenaltyModal').modal('hide');
+            });
+
+            $('#closeBtn').click(function () {
+                $('#addPenaltyModal').modal('hide');
+            });
+        });
+
+        function closeModal() {
+            $('#detailsModal').modal('hide');
+        }
+        function showDetails(id) {
+            $.ajax({
+                url: '/New/GetLoanSchedules?loanId=' + id,
+                type: 'GET',
+                success: function (data) {
+                    var modalBody = $('#detailsModal .modal-body');
+                    var tableBody = '';
+
+                    data.forEach(function (schedule) {
+                        if (schedule.status !== 'Paid') {
+                            var adjustedAmount = schedule.adjustedPaymentAmount; // Use the adjusted payment amount
+                            tableBody += `
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">$${adjustedAmount.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">${new Date(schedule.scheduleDate).toLocaleDateString()}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">
+                                        <button class="btn btn-success pay-btn" onclick="showPaymentModal('${schedule.scheduleId}')">Pay</button>
+                                    </td>
+                                </tr>
+                            `;
+                        } else if (schedule.status == 'Paid') {
+                            var adjustedAmount = schedule.adjustedPaymentAmount; // Use the adjusted payment amount
+                            tableBody += `
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">$${adjustedAmount.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">${new Date(schedule.scheduleDate).toLocaleDateString()}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">
+                                        <button class="btn btn-success receipt-btn" onclick="showReceiptModal('${schedule.scheduleId}')">Details</button>
+                                    </td>
+                                </tr>
+                            `;
+                        } 
+                    });
+
+                    modalBody.html(`
+                        <table class="table" style="width: 100%; border-collapse: collapse; background-color: white; color: black; padding: 20px;">
+                            <thead>
+                                <tr style="background-color: #f0f0f0;">
+                                    <th style="border: 1px solid #ddd; padding: 8px;">Payment</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">Due Date</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableBody}
+                            </tbody>
+                        </table>
+                    `);
+
+                    $('#detailsModal').modal('show');
+                },
+                error: function () {
+                    alert('Error fetching loan schedules');
+                }
+            });
+        }
+
+
+
+
+        function showPaymentModal(scheduleId) {
+            $('#paymentScheduleId').val(scheduleId);
+            $('#paymentModal').modal('show');
+        }
+
+        $(document).ready(function () {
+            $('#confirmPaymentBtn').click(function () {
+                var paymentAmount = $('#paymentAmountInput').val();
+                var scheduleId = $('#paymentScheduleId').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/New/DeductPayment',
+                    data: { scheduleId: scheduleId, paymentAmount: paymentAmount },
+                    success: function (response) {
+                        // Reload the page or update the UI as needed
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+                $('#paymentModal').modal('hide');
+            });
+        });
+
+        function showReceiptModal(scheduleId) {
+            $.ajax({
+                url: '/New/GetScheduleReceiptDetails?scheduleId=' + scheduleId,
+                type: 'GET',
+                success: function (data) {
+                    if (data && data.schedule && Array.isArray(data.transactions)) {
+                        var modalBody = $('#receiptModal .modal-body');
+                        var transactionDetails = '';
+
+                        data.transactions.forEach(function (transaction) {
+                            if (transaction.paymentAmount && transaction.transactionDate) {
+                                transactionDetails += `
+                                    <tr>
+                                        <td>${new Date(transaction.transactionDate).toLocaleDateString()}</td>
+                                        <td>$${transaction.paymentAmount.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            }
+                        });
+
+                        var receiptContent = `
+                            <div style="background-color: white; color: black; padding: 20px;">
+                                <h5>Receipt for Schedule Number: ${data.schedule.scheduleId}</h5>
+                                <p><strong>Date Paid:</strong> ${data.lastPaymentDate ? new Date(data.lastPaymentDate).toLocaleDateString() : 'N/A'}</p>
+                                <p><strong>Total Paid Amount:</strong> $${data.schedule.totalAmount ? data.schedule.totalAmount.toFixed(2) : 'N/A'}</p>
+                                <table class="table" style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background-color: #f0f0f0;">
+                                            <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
+                                            <th style="border: 1px solid #ddd; padding: 8px;">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${transactionDetails}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+
+                        modalBody.html(receiptContent);
+
+                         $('.print-btn').off('click').on('click', function() {
+                            printReceipt(receiptContent);
+                        });
+
+                        $('#receiptModal').modal('show');
+                    } else {
+                        console.error('Invalid data structure:', data);
+                        alert('Error: Invalid data structure');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching receipt details:', xhr.responseText);
+                    alert('Error fetching receipt details');
+                }
+            });
+        }
+        function printReceipt(content) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Ensure html2canvas is loaded before using it
+            if (typeof html2canvas === 'function') {
+                html2canvas(document.querySelector("#receiptModal .modal-body"), {
+                    useCORS: true,
+                    scale: 0.8
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/jpeg');
+                    const imgWidth = 190;
+                    const pageHeight = 295; // A4 size in mm
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 10;
+
+                    doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight - position;
+
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        doc.addPage();
+                        doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight - position;
+                    }
+
+                    doc.save('receipt.pdf');
+                }).catch(error => {
+                    console.error('Error converting HTML to canvas:', error);
+                    alert('Error converting HTML to canvas');
+                });
+            } else {
+                console.error('Could not load html2canvas');
+                alert('Error: Could not load html2canvas');
+            }
+        }
+
+
+
+
+        $(document).ready(function () {
+            $('.receipt-btn').click(function () {
+                var scheduleId = $(this).attr('onclick').match(/\d+/)[0];
+                showReceiptModal(scheduleId);
+            });
+        });
+
+
+    </script>
+</body>
+</html>

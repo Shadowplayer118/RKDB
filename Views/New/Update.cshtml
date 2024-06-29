@@ -1,0 +1,171 @@
+@model RKDB.ViewModel.ClientInfoViewModel
+@using RKDB.Entities
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Form</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/RKDB.styles.css" asp-append-version="true" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        form {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
+            grid-gap: 20px;
+        }
+
+        label {
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            width: 100%; 
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<h2>Update</h2>
+    <form asp-action="update" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="Id" >
+
+        <div class="form-group">
+            <label asp-for="Usertype"></label>
+            <select asp-for="Usertype" class="form-control">
+                @foreach(var usertype in (List<Usertype>)ViewData["Usertypes"])
+                {
+                    <option value="@usertype.Id">@usertype.Name</option>
+                }
+            </select>
+            <span asp-validation-for="Usertype" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Firstname"></label>
+            <input class="form-control" asp-for="Firstname">
+            <span asp-validation-for="Firstname" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Middlename"></label>
+            <input  class="form-control" asp-for="Middlename">
+            <span asp-validation-for="Middlename" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Lastname"></label>
+            <input  class="form-control" asp-for="Lastname">
+            <span asp-validation-for="Lastname" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Address"></label>
+            <input  class="form-control" asp-for="Address">
+            <span asp-validation-for="Address" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Zipcode"></label>
+            <input  class="form-control" asp-for="Zipcode">
+            <span asp-validation-for="Zipcode" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Birthday"></label>
+            <input  class="form-control" asp-for="Birthday" type="date" id="Birthday" oninput="calculateAge()"> 
+            <span asp-validation-for="Birthday" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Age"></label>
+            <input  class="form-control" asp-for="Age" id="Age" readonly> 
+            <span asp-validation-for="Age" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Nameoffather"></label>
+            <input  class="form-control" asp-for="Nameoffather">
+            <span asp-validation-for="Nameoffather" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Nameofmother"></label>
+            <input  class="form-control" asp-for="Nameofmother">
+            <span asp-validation-for="Nameofmother" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="CivilStatus"></label>
+            <select asp-for="CivilStatus" class="form-control">
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+            </select>
+            <span asp-validation-for="CivilStatus" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Religion"></label>
+            <input  class="form-control" asp-for="Religion">
+            <span asp-validation-for="Religion" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Occupation"></label>
+            <input  class="form-control" asp-for="Occupation">
+            <span asp-validation-for="Occupation" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label>Click to submit</label>
+            <input type="submit" class="btn btn-primary" value="Submit">
+        </div>
+    </form>
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }
+    <script>
+        function calculateAge() {
+            var birthday = new Date(document.getElementById('Birthday').value);
+            var today = new Date();
+            var age = today.getFullYear() - birthday.getFullYear();
+            var m = today.getMonth() - birthday.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthday.getDate())) {
+                age--;
+            }
+            document.getElementById('Age').value = age;
+        }
+    </script>
+</body>
+</html>
+

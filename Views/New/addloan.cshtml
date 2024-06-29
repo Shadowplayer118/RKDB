@@ -1,0 +1,220 @@
+@model RKDB.ViewModel.LoanViewModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/RKDB.styles.css" asp-append-version="true" />
+    <title>Add Loan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        form {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
+            grid-gap: 20px;
+        }
+
+        label {
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            width: 100%; 
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Add Loan</h1>
+
+    <form method="post" asp-action="AddLoan" asp-controller="New">
+        <input type="hidden" name="ClientId" value="@Model.ClientId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group">
+            <label asp-for="Amount"></label>
+            <input asp-for="Amount" class="form-control" id="Amount"/>
+            <span asp-validation-for="Amount" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Term">Term</label>
+            <input type="text" id="Term" name="Term" class="form-control" />
+            <span asp-validation-for="Term" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Interest">Interest</label>
+            <input type="text" id="Interest" name="Interest" class="form-control" />
+            <span asp-validation-for="Interest" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Deduction">Deduction</label>
+            <input type="text" id="Deduction" name="Deduction" class="form-control" placeholder="Optional"/>
+            <span asp-validation-for="Deduction" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Payment"></label>
+            <select asp-for="Payment" class="form-control" id="paymentSelect">
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+            </select>
+            <span asp-validation-for="Payment" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="paymentAmount">Payment Amount</label>
+            <input type="text" id="paymentAmount" name="PaymentAmount" class="form-control" readonly />
+        </div>
+        <div class="form-group">
+            <label for="Total">Total</label>
+            <input type="text" id="Total" name="Total" class="form-control" readonly />
+        </div>
+        <div class="form-group">
+            <label for="dueDate">Due Date</label>
+            <input type="text" id="dueDate" name="DueDate" class="form-control" readonly />
+        </div>
+        <div class="form-group">
+            <label for="Submit">Click to submit</label>
+            <input type="submit" value="Submit" class="btn btn-primary" />
+        </div>
+    </form>
+
+   @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+        <script>
+            function calculatePaymentAmount(term, payment, amount) {
+                var interestRate = parseFloat(document.getElementById('Interest').value) / 100; // Interest rate in decimal
+                var paymentAmount = 0;
+
+                switch (payment) {
+                    case 'Daily':
+                        paymentAmount = amount / term;
+                        break;
+                    case 'Weekly':
+                        paymentAmount = amount / term; // Assuming 4 weeks in a month
+                        break;
+                    case 'Monthly':
+                        paymentAmount = amount / term;
+                        break;
+                    default:
+                        break;
+                }
+
+                return paymentAmount.toFixed(2);
+            }
+
+            document.addEventListener("DOMContentLoaded", function() {
+                var term = parseInt(document.getElementById('Term').value);
+                var payment = document.getElementById('paymentSelect').value;
+                var amount = parseInt(document.getElementById('Amount').value);
+                var interest = parseInt(document.getElementById('Interest').value);
+                var deductionInput = document.getElementById('Deduction');
+                var deduction = deductionInput.value ? parseInt(deductionInput.value) : 0;
+                
+                var paymentAmount = calculatePaymentAmount(term, payment, amount);
+                var totalInterest = (amount * (interest / 100)).toFixed(2);
+                var totalAmount = (amount - parseFloat(totalInterest) - deduction).toFixed(2);
+
+                document.getElementById('paymentAmount').value = paymentAmount;
+                document.getElementById('Total').value = totalAmount;
+
+                var dueDate = new Date();
+                switch (payment) {
+                    case 'Daily':
+                        dueDate.setDate(dueDate.getDate() + term);
+                        break;
+                    case 'Weekly':
+                        dueDate.setDate(dueDate.getDate() + term);
+                        break;
+                    case 'Monthly':
+                        dueDate.setMonth(dueDate.getMonth() + term);
+                        break;
+                    default:
+                        break;
+                }
+                var formattedDate = dueDate.toISOString().slice(0, 10);
+                document.getElementById('dueDate').value = formattedDate;
+            });
+
+            document.getElementById('paymentSelect').addEventListener('change', function() {
+                var term = parseInt(document.getElementById('Term').value);
+                var payment = this.value;
+                var amount = parseInt(document.getElementById('Amount').value);
+                var interest = parseInt(document.getElementById('Interest').value);
+                var deductionInput = document.getElementById('Deduction');
+                var deduction = deductionInput.value ? parseInt(deductionInput.value) : 0;
+                
+                var paymentAmount = calculatePaymentAmount(term, payment, amount);
+                var totalInterest = (amount * (interest / 100)).toFixed(2);
+                var totalAmount = (amount - parseFloat(totalInterest) - deduction).toFixed(2);
+                var paymentAmountWithInterest = (parseFloat(paymentAmount) * (1 + interest / 100)).toFixed(2);
+
+                document.getElementById('paymentAmount').value = paymentAmount;
+                document.getElementById('Total').value = totalAmount;
+
+                var dueDate = new Date();
+                switch (payment) {
+                    case 'Daily':
+                        dueDate.setDate(dueDate.getDate() + term);
+                        break;
+                    case 'Weekly':
+                        dueDate.setDate(dueDate.getDate() + term * 7);
+                        break;
+                    case 'Monthly':
+                        dueDate.setMonth(dueDate.getMonth() + term);
+                        break;
+                    default:
+                        break;
+                }
+                var formattedDate = dueDate.toISOString().slice(0, 10);
+                document.getElementById('dueDate').value = formattedDate;
+            });
+        </script>
+    }
+
+
+
+</body>
+</html>
